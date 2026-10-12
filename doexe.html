@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сборка проекта в приложение</title>
+    <style>
+        :root {
+            --bg-dark: #07090f;
+            --bg-slide: #0d1117;
+            --neon-cyan: #00f5d4;
+            --neon-magenta: #f15bb5;
+            --neon-yellow: #fee440;
+            --neon-purple: #9d4edd;
+            --neon-green: #06ffa5;
+            --neon-orange: #ff9f43;
+            --text-main: #f8f9fa;
+            --text-muted: #8b949e;
+            --code-bg: #161b22;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); color: var(--text-main); }
+
+        .presentation { width: 100vw; height: 100vh; position: relative; }
+
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 25px 35px; opacity: 0; visibility: hidden; transform: translateX(50px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); background: var(--bg-slide);
+        }
+
+        .slide.active { opacity: 1; visibility: visible; transform: translateX(0); z-index: 2; }
+
+        .slide::before {
+            content: ''; position: absolute; width: 500px; height: 500px; border-radius: 50%;
+            filter: blur(150px); opacity: 0.12; z-index: 0;
+        }
+
+        .slide-1::before { background: var(--neon-magenta); top: -150px; left: -150px; }
+        .slide-2::before { background: var(--neon-cyan); bottom: -150px; right: -150px; }
+        .slide-3::before { background: var(--neon-yellow); top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .slide-4::before { background: var(--neon-purple); bottom: -150px; left: -150px; }
+        .slide-5::before { background: var(--neon-green); top: -150px; right: -150px; }
+        .slide-6::before { background: var(--neon-orange); bottom: -150px; right: -150px; }
+        .slide-7::before { background: var(--neon-magenta); top: -150px; left: -150px; }
+        .slide-8::before { background: var(--neon-cyan); bottom: -150px; right: -150px; }
+        .slide-9::before { background: var(--neon-yellow); top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .slide-10::before { background: var(--neon-purple); bottom: -150px; left: -150px; }
+        .slide-11::before { background: var(--neon-green); top: -150px; right: -150px; }
+        .slide-12::before { background: var(--neon-orange); bottom: -150px; right: -150px; }
+        .slide-13::before { background: var(--neon-cyan); top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .content {
+            position: relative; z-index: 1; max-width: 1200px; width: 100%;
+            background: rgba(13, 17, 23, 0.92); backdrop-filter: blur(10px);
+            border-radius: 18px; padding: 25px 35px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 20px rgba(0, 245, 212, 0.1);
+            border: 1px solid rgba(255,255,255,0.1); max-height: 92vh; overflow-y: auto;
+        }
+
+        .content::-webkit-scrollbar { width: 5px; }
+        .content::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
+
+        h1 {
+            font-size: 2.3rem; font-weight: 800; text-align: center; margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 1.8rem; margin-bottom: 18px; color: var(--neon-yellow);
+            border-left: 5px solid var(--neon-magenta); padding-left: 15px;
+        }
+
+        h3 { font-size: 1.2rem; color: var(--neon-cyan); margin: 12px 0 8px 0; }
+
+        p, li { font-size: 1.02rem; line-height: 1.45; margin-bottom: 8px; }
+
+        ul { list-style: none; padding-left: 0; margin: 10px 0; }
+        li::before { content: "▹"; color: var(--neon-magenta); font-weight: bold; display: inline-block; width: 1.5em; }
+
+        .hl { color: var(--neon-cyan); font-weight: bold; }
+        .hl-y { color: var(--neon-yellow); font-weight: bold; }
+        .hl-m { color: var(--neon-magenta); font-weight: bold; }
+        .hl-p { color: var(--neon-purple); font-weight: bold; }
+        .hl-g { color: var(--neon-green); font-weight: bold; }
+        .hl-o { color: var(--neon-orange); font-weight: bold; }
+
+        pre {
+            background: var(--code-bg); border-radius: 8px; padding: 12px 15px;
+            overflow-x: auto; border: 1px solid rgba(255,255,255,0.1);
+            margin: 10px 0; box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+        }
+
+        code { font-family: 'Consolas', monospace; font-size: 0.88rem; color: #e2e8f0; line-height: 1.45; }
+
+        .kw { color: #ff79c6; }
+        .str { color: #f1fa8c; }
+        .fn { color: #8be9fd; }
+        .cm { color: #6272a4; font-style: italic; }
+        .cmd { color: var(--neon-green); font-weight: bold; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 12px 0; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 12px 0; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+
+        .card {
+            background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 15px; transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .card:hover { transform: translateY(-3px); border-color: var(--neon-cyan); }
+
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: bold; margin-bottom: 8px;
+        }
+
+        .badge-c { background: rgba(0,245,212,0.15); color: var(--neon-cyan); border: 1px solid var(--neon-cyan); }
+        .badge-m { background: rgba(241,91,181,0.15); color: var(--neon-magenta); border: 1px solid var(--neon-magenta); }
+        .badge-y { background: rgba(254,228,64,0.15); color: var(--neon-yellow); border: 1px solid var(--neon-yellow); }
+        .badge-p { background: rgba(157,78,221,0.15); color: var(--neon-purple); border: 1px solid var(--neon-purple); }
+        .badge-g { background: rgba(6,255,165,0.15); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .badge-o { background: rgba(255,159,67,0.15); color: var(--neon-orange); border: 1px solid var(--neon-orange); }
+
+        .info-box {
+            background: rgba(0,245,212,0.08); border-left: 4px solid var(--neon-cyan);
+            padding: 10px 15px; border-radius: 6px; margin: 10px 0;
+        }
+
+        .warn-box {
+            background: rgba(241,91,181,0.08); border-left: 4px solid var(--neon-magenta);
+            padding: 10px 15px; border-radius: 6px; margin: 10px 0;
+        }
+
+        .success-box {
+            background: rgba(6,255,165,0.08); border-left: 4px solid var(--neon-green);
+            padding: 10px 15px; border-radius: 6px; margin: 10px 0;
+        }
+
+        .step-card {
+            background: rgba(255,255,255,0.03); border: 2px solid var(--neon-cyan);
+            border-radius: 12px; padding: 15px; margin: 10px 0;
+            position: relative;
+        }
+
+        .step-number {
+            position: absolute; top: -15px; left: 15px;
+            background: var(--neon-cyan); color: var(--bg-dark);
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1rem;
+        }
+
+        .step-card.magenta { border-color: var(--neon-magenta); }
+        .step-card.magenta .step-number { background: var(--neon-magenta); }
+        .step-card.yellow { border-color: var(--neon-yellow); }
+        .step-card.yellow .step-number { background: var(--neon-yellow); }
+        .step-card.green { border-color: var(--neon-green); }
+        .step-card.green .step-number { background: var(--neon-green); }
+        .step-card.purple { border-color: var(--neon-purple); }
+        .step-card.purple .step-number { background: var(--neon-purple); }
+
+        .cmd-box {
+            background: var(--code-bg); border: 2px solid var(--neon-green);
+            border-radius: 8px; padding: 10px 15px; margin: 8px 0;
+            font-family: 'Consolas', monospace;
+        }
+
+        .cmd-box .prompt { color: var(--neon-green); }
+        .cmd-box .cmd-text { color: var(--neon-yellow); font-weight: bold; }
+
+        .table {
+            width: 100%; border-collapse: collapse; margin: 10px 0;
+        }
+
+        .table th {
+            text-align: left; padding: 10px; color: var(--neon-yellow);
+            border-bottom: 2px solid var(--neon-cyan); font-size: 0.95rem;
+        }
+
+        .table td {
+            padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem;
+        }
+
+        .nav-controls {
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 20px; z-index: 100;
+            background: rgba(13, 17, 23, 0.95); padding: 10px 25px; border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+        }
+
+        .nav-btn {
+            background: transparent; border: 2px solid var(--neon-cyan); color: var(--neon-cyan);
+            width: 42px; height: 42px; border-radius: 50%; font-size: 1.3rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+        }
+
+        .nav-btn:hover { background: var(--neon-cyan); color: var(--bg-dark); box-shadow: 0 0 15px var(--neon-cyan); }
+        .nav-btn:disabled { border-color: #444; color: #444; cursor: not-allowed; box-shadow: none; }
+
+        .slide-counter { font-size: 1rem; font-weight: bold; color: var(--text-main); min-width: 60px; text-align: center; }
+
+        .progress-bar {
+            position: fixed; top: 0; left: 0; height: 4px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+            transition: width 0.4s ease; z-index: 100; box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .subtitle {
+            text-align: center; font-size: 1.15rem; color: var(--text-muted); margin-bottom: 18px;
+        }
+
+        .flow {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; margin: 15px 0; flex-wrap: wrap;
+        }
+
+        .flow-box {
+            background: rgba(255,255,255,0.05); border: 2px solid var(--neon-cyan);
+            border-radius: 10px; padding: 10px 15px; font-weight: bold;
+            color: var(--neon-cyan); min-width: 100px; text-align: center; font-size: 0.9rem;
+        }
+
+        .flow-arrow { color: var(--neon-yellow); font-size: 1.5rem; }
+
+        .folder-tree {
+            background: var(--code-bg); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; padding: 12px 15px; font-family: 'Consolas', monospace;
+            font-size: 0.85rem; line-height: 1.6; margin: 10px 0;
+        }
+
+        .folder-tree .folder { color: var(--neon-cyan); font-weight: bold; }
+        .folder-tree .file { color: var(--text-main); }
+        .folder-tree .exe { color: var(--neon-green); font-weight: bold; }
+        .folder-tree .asset { color: var(--neon-yellow); }
+
+        @media (max-width: 900px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; }
+            .content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="presentation" id="presentation">
+        
+        <!-- Слайд 1: Титульный -->
+        <section class="slide slide-1 active">
+            <div class="content" style="text-align: center;">
+                <h1>📦 Сборка проекта в приложение</h1>
+                <p class="subtitle">Упаковка Python-проекта в исполняемый .exe файл</p>
+                <div class="grid-3" style="margin-top: 25px;">
+                    <div class="card" style="border-color: var(--neon-cyan);">
+                        <span class="badge badge-c">Теория</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Лицензии, расширения, pip</p>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-magenta);">
+                        <span class="badge badge-m">Практика</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Пошаговая инструкция сборки</p>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-yellow);">
+                        <span class="badge badge-y">Результат</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Готовый .exe без VS Code</p>
+                    </div>
+                </div>
+                <div style="margin-top: 25px; color: var(--text-muted); font-size: 0.95rem;">
+                    ← → для навигации
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 2: Жизненный цикл ПО -->
+        <section class="slide slide-2">
+            <div class="content">
+                <h2>🔄 Жизненный цикл ПО</h2>
+                
+                <p>Завершение технического проекта — <b>лишь середина</b> жизненного цикла ПО</p>
+
+                <div class="flow">
+                    <div class="flow-box">Разработка</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">Презентация</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">📄 Документирование</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box" style="border-color: var(--neon-green); color: var(--neon-green);">🚀 Распространение</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box" style="border-color: var(--neon-magenta); color: var(--neon-magenta);">🔧 Сопровождение</div>
+                </div>
+
+                <div class="info-box">
+                    <p style="margin: 0;"><span class="hl">Вопрос:</span> Как распространить игру так, чтобы пользователь мог запустить её <b>без VS Code и Python</b>?</p>
+                </div>
+
+                <div class="warn-box">
+                    <p style="margin: 0;"><span class="hl-m">Решение:</span> Упаковать проект в <b>исполняемый файл</b> (.exe), который запускается двойным кликом</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 3: Лицензии -->
+        <section class="slide slide-3">
+            <div class="content">
+                <h2>📜 Лицензии ПО</h2>
+                
+                <p><span class="hl">Лицензия</span> — документ, регулирующий правила распространения и использования ПО</p>
+
+                <div class="grid-3">
+                    <div class="card" style="border-color: var(--neon-magenta);">
+                        <span class="badge badge-m">Закрытые</span>
+                        <h3 style="color: var(--neon-magenta); font-size: 1rem;">Проприетарные</h3>
+                        <p style="margin: 0; font-size: 0.85rem;">Нельзя использовать без согласия разработчика</p>
+                        <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">Пример: MS Office</p>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-cyan);">
+                        <span class="badge badge-c">Открытые</span>
+                        <h3 style="color: var(--neon-cyan); font-size: 1rem;">Open Source</h3>
+                        <p style="margin: 0; font-size: 0.85rem;">Можно скачивать и распространять</p>
+                        <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">Пример: OpenOffice</p>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-green);">
+                        <span class="badge badge-g">Свободные</span>
+                        <h3 style="color: var(--neon-green); font-size: 1rem;">Free</h3>
+                        <p style="margin: 0; font-size: 0.85rem;">Можно скачивать, распространять и <b>изменять</b></p>
+                        <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">Пример: VS Code</p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <p style="margin: 0;"><span class="hl">Creative Commons (CC):</span> «Используйте мой продукт как угодно, но <b>сохраняйте моё авторство</b>»</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 4: Расширения VS Code -->
+        <section class="slide slide-4">
+            <div class="content">
+                <h2>🧩 Расширения VS Code</h2>
+                
+                <p><span class="hl">Расширение</span> — программа-дополнение, расширяющая возможности VS Code</p>
+
+                <h3>Полезные расширения:</h3>
+                <div class="grid-2">
+                    <div class="card" style="border-color: var(--neon-cyan);">
+                        <span class="badge badge-c">Python</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Подсветка синтаксиса, проверки, подсказки</p>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-magenta);">
+                        <span class="badge badge-m">Bookmarks</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Закладки в коде для быстрой навигации</p>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-yellow);">
+                        <span class="badge badge-y">Better Comments</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Цветные категории комментариев (<code>#!</code>, <code># TODO</code>)</p>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-purple);">
+                        <span class="badge badge-p">Polacode</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Красивые скриншоты кода для презентаций</p>
+                    </div>
+                </div>
+
+                <h3>Управление расширениями:</h3>
+                <ul>
+                    <li><span class="hl">Install</span> — установить расширение</li>
+                    <li><span class="hl-y">Disable</span> — отключить (не удаляя)</li>
+                    <li><span class="hl-m">Uninstall</span> — полностью удалить</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Слайд 5: Терминал и pip -->
+        <section class="slide slide-5">
+            <div class="content">
+                <h2>💻 Терминал и pip</h2>
+                
+                <p><span class="hl">pip</span> — пакетный менеджер Python для установки библиотек</p>
+
+                <h3>Основные команды pip:</h3>
+                <div class="cmd-box">
+                    <span class="prompt">❯</span> <span class="cmd-text">pip help</span>
+                    <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 5px;">— список всех команд pip</div>
+                </div>
+                <div class="cmd-box">
+                    <span class="prompt">❯</span> <span class="cmd-text">pip list</span>
+                    <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 5px;">— список установленных пакетов</div>
+                </div>
+                <div class="cmd-box">
+                    <span class="prompt">❯</span> <span class="cmd-text">pip install pyinstaller</span>
+                    <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 5px;">— установить пакет Pyinstaller</div>
+                </div>
+
+                <div class="warn-box">
+                    <p style="margin: 0;"><span class="hl-m">Важно:</span> перед работой убедитесь, что в терминале активна строка <code>(algovenv)</code> или <code>(algoritmika)</code></p>
+                </div>
+
+                <div class="info-box">
+                    <p style="margin: 0;"><span class="hl">Совет:</span> если пакет уже установлен, команда <code>pip install</code> обновит его до последней версии</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 6: Общая схема сборки -->
+        <section class="slide slide-6">
+            <div class="content">
+                <h2>🗺️ Общая схема сборки .exe</h2>
+                
+                <p>Процесс упаковки проекта в исполняемый файл:</p>
+
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3 style="margin-top: 0;">Убедитесь, что игра работает</h3>
+                    <p style="margin: 0; font-size: 0.9rem;">Запустите проект в VS Code и проверьте, что всё работает корректно</p>
+                </div>
+
+                <div class="step-card magenta">
+                    <div class="step-number">2</div>
+                    <h3 style="margin-top: 0;">Замените шрифты на стандартные</h3>
+                    <p style="margin: 0; font-size: 0.9rem;"><code>Font(None, 36)</code> → <code>SysFont('Arial', 36)</code></p>
+                </div>
+
+                <div class="step-card yellow">
+                    <div class="step-number">3</div>
+                    <h3 style="margin-top: 0;">Извлеките проект из среды Алгоритмики</h3>
+                    <p style="margin: 0; font-size: 0.9rem;">Отключите расширение, скопируйте файлы в новую папку</p>
+                </div>
+
+                <div class="step-card green">
+                    <div class="step-number">4</div>
+                    <h3 style="margin-top: 0;">Создайте исполняемый файл</h3>
+                    <p style="margin: 0; font-size: 0.9rem;">Команда <code>pyinstaller --onefile game.py</code></p>
+                </div>
+
+                <div class="step-card purple">
+                    <div class="step-number">5</div>
+                    <h3 style="margin-top: 0;">Соберите финальную папку</h3>
+                    <p style="margin: 0; font-size: 0.9rem;">.exe + картинки + музыка в одну папку <code>result</code></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 7: Шаг 1-2 — Подготовка -->
+        <section class="slide slide-7">
+            <div class="content">
+                <h2>🔧 Шаги 1-2: Проверка и шрифты</h2>
+                
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3 style="margin-top: 0; color: var(--neon-cyan);">Убедитесь, что игра работает</h3>
+                    <p>Откройте проект в VS Code через расширение Алгоритмики и запустите игру</p>
+                </div>
+
+                <div class="step-card magenta">
+                    <div class="step-number">2</div>
+                    <h3 style="margin-top: 0; color: var(--neon-magenta);">Замените шрифты на стандартные</h3>
+                    <p>Это важно — нестандартные шрифты могут вызвать ошибки при сборке!</p>
+                    
+                    <div class="grid-2" style="margin-top: 10px;">
+                        <div>
+                            <p style="color: var(--neon-magenta); font-size: 0.85rem; margin-bottom: 5px;">❌ Было:</p>
+                            <pre><code>font2 = font.<span class="fn">Font</span>(<span class="kw">None</span>, <span class="cmd">36</span>)</code></pre>
+                        </div>
+                        <div>
+                            <p style="color: var(--neon-green); font-size: 0.85rem; margin-bottom: 5px;">✅ Стало:</p>
+                            <pre><code>font2 = font.<span class="fn">SysFont</span>(<span class="str">'Arial'</span>, <span class="cmd">36</span>)</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Команда</th>
+                            <th>Назначение</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>font.SysFont('Arial', 40)</code></td>
+                            <td>Создание шрифта на основе системного</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Слайд 8: Шаг 3 — Извлечение проекта -->
+        <section class="slide slide-8">
+            <div class="content">
+                <h2>📂 Шаг 3: Извлечение проекта</h2>
+                
+                <div class="step-card yellow">
+                    <div class="step-number">3</div>
+                    <h3 style="margin-top: 0; color: var(--neon-yellow);">Извлеките файлы из среды Алгоритмики</h3>
+                </div>
+
+                <h3>Пошаговая инструкция:</h3>
+
+                <div class="step-card">
+                    <div class="step-number">3.1</div>
+                    <p style="margin: 0;"><span class="hl">Отключите расширение Алгоритмики</span> в VS Code и нажмите <b>Reload</b></p>
+                </div>
+
+                <div class="step-card magenta">
+                    <div class="step-number">3.2</div>
+                    <p style="margin: 0;"><span class="hl-m">Кликните правой кнопкой</span> по файлу → <b>«Показать в Проводнике»</b> (Windows) / <b>Reveal in Finder</b> (macOS)</p>
+                </div>
+
+                <div class="step-card yellow">
+                    <div class="step-number">3.3</div>
+                    <p style="margin: 0;"><span class="hl-y">Скопируйте файлы проекта</span> в новую удобную папку на компьютере</p>
+                </div>
+
+                <div class="step-card green">
+                    <div class="step-number">3.4</div>
+                    <p style="margin: 0;"><span class="hl-g">Откройте новую папку в VS Code:</span> File → Open Folder</p>
+                </div>
+
+                <div class="warn-box">
+                    <p style="margin: 0;"><span class="hl-m">macOS:</span> пока не запускайте и не проверяйте игру! Дальше нужны дополнительные шаги</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 9: macOS — виртуальное окружение -->
+        <section class="slide slide-9">
+            <div class="content">
+                <h2>🍎 macOS: виртуальное окружение</h2>
+                
+                <p><span class="hl">Виртуальное окружение</span> — изолированное пространство для Python-пакетов</p>
+
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3 style="margin-top: 0;">Переключитесь на стандартный Python</h3>
+                    <p style="margin: 0; font-size: 0.9rem;">В левом нижнем углу VS Code кликните на Python → выберите <code>usr/local/bin/python3</code></p>
+                </div>
+
+                <div class="step-card magenta">
+                    <div class="step-number">2</div>
+                    <h3 style="margin-top: 0;">Создайте виртуальное окружение</h3>
+                    <div class="cmd-box">
+                        <span class="prompt">❯</span> <span class="cmd-text">python3 -m venv my_venv</span>
+                    </div>
+                    <p style="margin: 5px 0 0 0; font-size: 0.85rem;">Во всплывшем окне одобрите замену окружения на <code>my_venv</code></p>
+                </div>
+
+                <div class="step-card yellow">
+                    <div class="step-number">3</div>
+                    <h3 style="margin-top: 0;">Активируйте окружение</h3>
+                    <div class="cmd-box">
+                        <span class="prompt">❯</span> <span class="cmd-text">source my_venv/bin/activate</span>
+                    </div>
+                    <p style="margin: 5px 0 0 0; font-size: 0.85rem;">В консоли появятся круглые скобки <code>(my_venv)</code></p>
+                </div>
+
+                <div class="step-card green">
+                    <div class="step-number">4</div>
+                    <h3 style="margin-top: 0;">Установите нужные пакеты</h3>
+                    <div class="cmd-box">
+                        <span class="prompt">❯</span> <span class="cmd-text">pip install pygame pyinstaller</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 10: Шаг 4 — Создание exe -->
+        <section class="slide slide-10">
+            <div class="content">
+                <h2>⚙️ Шаг 4: Создание .exe файла</h2>
+                
+                <div class="step-card green">
+                    <div class="step-number">4</div>
+                    <h3 style="margin-top: 0; color: var(--neon-green);">Создайте исполняемый файл</h3>
+                    <p>Откройте терминал в VS Code и выполните команду:</p>
+                    
+                    <div class="cmd-box" style="margin-top: 10px;">
+                        <span class="prompt">❯</span> <span class="cmd-text">pyinstaller --onefile shooter_game.py</span>
+                    </div>
+                </div>
+
+                <h3>Что делает команда:</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Часть команды</th>
+                            <th>Назначение</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>pyinstaller</code></td>
+                            <td>Вызов программы упаковки</td>
+                        </tr>
+                        <tr>
+                            <td><code>--onefile</code></td>
+                            <td>Собрать всё в <b>один файл</b> .exe</td>
+                        </tr>
+                        <tr>
+                            <td><code>shooter_game.py</code></td>
+                            <td>Имя вашего Python-файла</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="success-box">
+                    <p style="margin: 0;"><span class="hl-g">✓ Успех:</span> в конце должно появиться сообщение <code>successfully</code></p>
+                </div>
+
+                <div class="warn-box">
+                    <p style="margin: 0;"><span class="hl-m">Важно:</span> перед вводом команды убедитесь, что в консоли отображается ваше виртуальное окружение <code>(my_venv)</code> или <code>(algovenv)</code></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 11: Шаг 5 — Сборка папки -->
+        <section class="slide slide-11">
+            <div class="content">
+                <h2>📁 Шаг 5: Сборка финальной папки</h2>
+                
+                <div class="step-card purple">
+                    <div class="step-number">5</div>
+                    <h3 style="margin-top: 0; color: var(--neon-purple);">Соберите финальную папку проекта</h3>
+                </div>
+
+                <h3>Что куда скопировать:</h3>
+
+                <div class="grid-2">
+                    <div>
+                        <h3 style="color: var(--neon-magenta);">📂 Откуда брать:</h3>
+                        <div class="folder-tree">
+<span class="folder">📁 project/</span>
+  <span class="folder">📁 dist/</span>
+    <span class="exe">📄 shooter_game.exe</span>  <span style="color: var(--text-muted);">← из dist</span>
+  <span class="asset">🖼️ galaxy.jpg</span>       <span style="color: var(--text-muted);">← из корня</span>
+  <span class="asset">🎵 space.ogg</span>        <span style="color: var(--text-muted);">← из корня</span>
+  <span class="asset">🔫 bullet.png</span>       <span style="color: var(--text-muted);">← из корня</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color: var(--neon-green);">📂 Куда класть:</h3>
+                        <div class="folder-tree">
+<span class="folder">📁 result/</span>
+  <span class="exe">📄 shooter_game.exe</span>
+  <span class="asset">🖼️ galaxy.jpg</span>
+  <span class="asset">🎵 space.ogg</span>
+  <span class="asset">🔫 bullet.png</span>
+  <span class="asset">🚀 rocket.png</span>
+  <span class="asset">👾 ufo.png</span>
+  <span class="asset">🔥 fire.ogg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <p style="margin: 0;"><span class="hl-g">🎉 Готово!</span> Запустите игру <b>двойным кликом</b> из папки <code>result</code></p>
+                </div>
+
+                <div class="info-box">
+                    <p style="margin: 0;"><span class="hl">💡 Совет:</span> папку <code>result</code> можно скопировать на флешку и запустить на любом компьютере</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 12: Linux -->
+        <section class="slide slide-12">
+            <div class="content">
+                <h2>🐧 Особенности запуска на Linux</h2>
+                
+                <p>Процесс создания файла аналогичен Windows, но <b>запуск отличается</b></p>
+
+                <div class="warn-box">
+                    <p style="margin: 0;"><span class="hl-m">По умолчанию:</span> исполняемый файл в Linux можно запустить <b>только из терминала</b></p>
+                </div>
+
+                <h3>Способ 1: Запуск по полному пути</h3>
+                <div class="cmd-box">
+                    <span class="prompt">❯</span> <span class="cmd-text">/полный/путь/к/shooter_game</span>
+                </div>
+
+                <h3>Способ 2: Запуск из текущей директории</h3>
+                <div class="cmd-box">
+                    <span class="prompt">❯</span> <span class="cmd-text">./shooter_game</span>
+                </div>
+
+                <div class="info-box">
+                    <p style="margin: 0;"><span class="hl">💡 Подсказка:</span> точка и слэш <code>./</code> означают «запустить файл из текущей папки»</p>
+                </div>
+
+                <div class="grid-2" style="margin-top: 15px;">
+                    <div class="card" style="border-color: var(--neon-cyan);">
+                        <span class="badge badge-c">Windows</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Двойной клик по .exe → запуск</p>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-orange);">
+                        <span class="badge badge-o">Linux</span>
+                        <p style="margin: 0; font-size: 0.9rem;">Терминал + команда <code>./имя_файла</code></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Слайд 13: Итоги -->
+        <section class="slide slide-13">
+            <div class="content">
+                <h2>✨ Итоги: что мы научились делать</h2>
+                
+                <div class="grid-2">
+                    <div class="card" style="border-color: var(--neon-cyan);">
+                        <span class="badge badge-c">Теория</span>
+                        <ul style="margin: 8px 0 0 0;">
+                            <li>Жизненный цикл ПО</li>
+                            <li>Типы лицензий (CC)</li>
+                            <li>Расширения VS Code</li>
+                            <li>Пакетный менеджер pip</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="border-color: var(--neon-green);">
+                        <span class="badge badge-g">Практика</span>
+                        <ul style="margin: 8px 0 0 0;">
+                            <li>Установка Pyinstaller</li>
+                            <li>Замена шрифтов</li>
+                            <li>Создание виртуального окружения</li>
+                            <li>Упаковка в .exe</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>📋 Ключевые команды:</h3>
+                <div class="cmd-box">
+                    <span class="prompt">❯</span> <span class="cmd-text">pip install pyinstaller</span> <span style="color: var(--text-muted); font-size: 0.8rem;">— установка</span>
+                </div>
+                <div class="cmd-box">
+                    <span class="prompt">❯</span> <span class="cmd-text">pyinstaller --onefile game.py</span> <span style="color: var(--text-muted); font-size: 0.8rem;">— сборка</span>
+                </div>
+                <div class="cmd-box">
+                    <span class="prompt">❯</span> <span class="cmd-text">python3 -m venv my_venv</span> <span style="color: var(--text-muted); font-size: 0.8rem;">— виртуальное окружение (macOS)</span>
+                </div>
+
+                <div style="margin-top: 15px; padding: 15px; background: rgba(254, 228, 64, 0.05); border: 1px dashed var(--neon-yellow); border-radius: 10px; text-align: center;">
+                    <p style="margin: 0; color: var(--neon-yellow); font-size: 1.1rem; font-weight: bold;">
+                        🎮 Теперь ваши игры можно запускать без VS Code!<br>
+                        Достаточно скопировать папку <code>result</code> на любой компьютер
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <div class="nav-controls">
+        <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">&#10094;</button>
+        <span class="slide-counter" id="counter">1 / 13</span>
+        <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">&#10095;</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const counter = document.getElementById('counter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressBar = document.getElementById('progressBar');
+
+        function updatePresentation() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) slide.classList.add('active');
+            });
+
+            counter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+            progressBar.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+            updatePresentation();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault(); changeSlide(1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault(); changeSlide(-1);
+            }
+        });
+
+        updatePresentation();
+    </script>
+</body>
+</html>
